@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SPARK Revenue Dashboard 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #F8F6F1;
+      color: #1A1714;
+      font-family: 'DM Sans', -apple-system, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    .hdr {
+      padding: 20px 28px 16px;
+      border-bottom: 1px solid #C8C2BB;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap;
+      background: #FFFFFF;
+    }
+    .eye {
+      font-family: 'DM Mono', monospace;
+      font-size: 9.5px; letter-spacing: .15em; text-transform: uppercase;
+      color: #5C5854; margin-bottom: 6px;
+    }
+    .ttl {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 22px; font-weight: 400; letter-spacing: -.02em; line-height: 1.1;
+      color: #1A1714;
+    }
+    .hdr-r { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .hdr-tgt {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: #5C5854;
+    }
+    .hdr-date { font-size: 11.5px; color: #3A3532; margin-top: 1px; }
+
+    .rfsh {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px; font-weight: 500;
+      color: #1A1714; background: #FFFFFF;
+      border: 1.5px solid #1A1714; border-radius: 3px;
+      padding: 7px 14px; cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+    .rfsh:hover { background: #1A1714; color: #FFFFFF; }
+    .rfsh:disabled { opacity: .55; cursor: not-allowed; }
+    .rfsh.spinning .ri { animation: spin .8s linear infinite; }
+    .ri { font-size: 13px; line-height: 1; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .sync-ts {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px; color: #5C5854; text-align: right; margin-top: 3px;
+    }
+
+    /* ── KPI STRIP ── */
+    .krow {
+      display: grid; grid-template-columns: repeat(6, 1fr);
+      background: #FFFFFF; border-bottom: 1px solid #C8C2BB;
+    }
+    @media (max-width: 760px) { .krow { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 460px) { .krow { grid-template-columns: repeat(2, 1fr); } }
+    .kc { padding: 14px 16px 12px; border-right: 1px solid #DDD8D2; }
+    .kc:last-child { border-right: none; }
+    .kl {
+      font-family: 'DM Mono', monospace;
+      font-size: 8.5px; letter-spacing: .16em; text-transform: uppercase;
+      color: #5C5854; margin-bottom: 6px;
+    }
+    .kv {
+      font-family: 'Fraunces', serif;
+      font-size: 25px; font-weight: 400; letter-spacing: -.025em; line-height: 1;
+      color: #1A1714;
+    }
+    .kv.w { color: #1B3558; }
+    .kv.g { color: #1F5C38; }
+    .kv.r { color: #7A1D12; }
+    .kv.a { color: #6A5030; }
+    .ks { font-size: 10.5px; color: #3A3532; margin-top: 4px; }
+
+    /* ── NAV ── */
+    .nav {
+      display: flex; padding: 0 28px;
+      border-bottom: 1px solid #C8C2BB;
+      background: #F8F6F1; overflow-x: auto; gap: 2px;
+    }
+    .nb {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 400;
+      color: #1A1714;
+      padding: 11px 18px 9px; background: none; border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer; transition: border-color .17s, font-weight .1s;
+      white-space: nowrap;
+    }
+    .nb:hover { border-bottom-color: #C8C2BB; }
+    .nb.on { font-weight: 600; border-bottom-color: #1A1714; }
+
+    /* ── LEGEND ── */
+    .leg-row {
+      padding: 8px 28px; border-bottom: 1px solid #DDD8D2;
+      display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
+      background: #FFFFFF;
+    }
+    .lg {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; color: #3A3532;
+    }
+    .lc { font-weight: 700; font-size: 11px; }
+
+    /* ── PANES ── */
+    .pn { display: none; }
+    .pn.on { display: block; }
+
+    /* ── ACTIVITIES ── */
+    .acts { padding: 0 28px 48px; }
+    .msec { border-bottom: 1px solid #DDD8D2; }
+    .mh {
+      display: flex; align-items: baseline;
+      justify-content: space-between; gap: 10px;
+      padding: 14px 0 8px; cursor: pointer; user-select: none;
+    }
+    .mh:hover .mn { color: #1A1714; }
+    .mn {
+      font-family: 'Fraunces', serif;
+      font-size: 16px; font-weight: 400;
+      color: #3A3532; letter-spacing: -.01em; transition: color .17s;
+    }
+    .mn.cur { color: #1A1714; }
+    .mm { display: flex; align-items: baseline; gap: 12px; flex-shrink: 0; }
+    .mw { font-family: 'DM Mono', monospace; font-size: 11px; color: #1B3558; font-weight: 600; }
+    .mp { font-family: 'DM Mono', monospace; font-size: 10.5px; color: #1F5C38; }
+    .mn0 { font-family: 'DM Mono', monospace; font-size: 10.5px; color: #5C5854; }
+    .mt {
+      font-family: 'DM Mono', monospace; font-size: 10px; color: #5C5854;
+      display: inline-block; transition: transform .2s;
+    }
+    .mt.o { transform: rotate(90deg); }
+    .mb { display: none; padding-bottom: 6px; }
+    .mb.o { display: block; }
+
+    /* ── EVENT ROW ── */
+    .ev {
+      display: grid; grid-template-columns: 40px 1fr auto;
+      gap: 8px 10px; padding: 7px 0;
+      border-top: 1px solid #E8E4DE; align-items: start;
+    }
+    .ed {
+      font-family: 'DM Mono', monospace;
+      font-size: 10.5px; color: #5C5854;
+      letter-spacing: .02em; padding-top: 2px;
+    }
+    .en { font-size: 12.5px; font-weight: 600; color: #1A1714; margin-bottom: 4px; line-height: 1.3; }
+    .esp { display: flex; flex-wrap: wrap; gap: 3px; }
+    .erk { font-size: 9.5px; color: #5C5854; font-style: italic; margin-top: 3px; }
+    .ea { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 600; text-align: right; padding-top: 2px; white-space: nowrap; }
+    .ea.w { color: #1B3558; }
+    .ea.g { color: #1F5C38; }
+    .ea.n { color: #5C5854; }
+
+    /* ── SPONSOR TAGS ── */
+    .sp {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 2px 7px; border-radius: 2px;
+      font-size: 10.5px; line-height: 1.6;
+      border: 1px solid #C8C2BB; background: #FFFFFF; color: #1A1714;
+    }
+    .sp.P { background: #E8EFF7; border-color: #9FBAD8; color: #0F2540; }
+    .sp.V { background: #E8EFF7; border-color: #9FBAD8; color: #1B3A65; }
+    .sp.F { background: #E8F2EC; border-color: #8FBF9F; color: #173D28; }
+    .sp.Q { background: #F0E9DC; border-color: #B8976A; color: #4A330F; }
+    .sp.T { background: #F0E9DC; border-color: #B8976A; color: #4A330F; }
+    .sp.L {
+      background: #F5ECEA; border-color: #C08888; color: #5C1710;
+      text-decoration: line-through; text-decoration-color: #C08888;
+    }
+    .sp.E { background: #F0EEE9; border-color: #C8C2BB; color: #5C5854; }
+    .ss { font-family: 'DM Mono', monospace; font-size: 8.5px; font-weight: 700; letter-spacing: .06em; opacity: .75; }
+    .sa { font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 600; }
+    .smore {
+      font-family: 'DM Mono', monospace; font-size: 10px; color: #3A3532;
+      padding: 2px 7px; cursor: pointer;
+      border: 1px dashed #C8C2BB; border-radius: 2px;
+    }
+    .smore:hover { color: #1A1714; border-color: #1A1714; }
+
+    /* ── CHART ── */
+    .chp { padding: 22px 28px 36px; }
+    .cht { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 400; color: #1A1714; margin-bottom: 3px; }
+    .chd { font-size: 12px; color: #3A3532; margin-bottom: 20px; }
+    #rc { width: 100%; display: block; }
+    .cl-row { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 12px; }
+    .cli { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #3A3532; }
+    .cll { width: 22px; height: 2px; }
+    .cfn { font-size: 10.5px; color: #5C5854; margin-top: 8px; line-height: 1.6; }
+
+    /* ── SALES INTELLIGENCE ── */
+    .inp { padding: 22px 28px 36px; }
+    .int { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 400; color: #1A1714; margin-bottom: 4px; }
+    .ind { font-size: 12.5px; color: #3A3532; line-height: 1.7; margin-bottom: 16px; }
+    .qr { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+    .qb {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px; font-weight: 500;
+      color: #1A1714; background: #FFFFFF;
+      border: 1.5px solid #3A3532; border-radius: 3px;
+      padding: 6px 12px; cursor: pointer;
+      transition: background .14s, color .14s; line-height: 1.3;
+    }
+    .qb:hover { background: #1A1714; color: #FFFFFF; }
+    #clog {
+      border: 1px solid #C8C2BB; border-radius: 3px;
+      min-height: 80px; max-height: 220px; overflow-y: auto;
+      padding: 10px 12px; margin-bottom: 10px;
+    }
+    .cm { font-size: 12.5px; line-height: 1.6; margin-bottom: 6px; color: #3A3532; }
+    .cm.u { color: #1A1714; font-weight: 500; }
+    .cm.u::before { content: '→ '; font-family: 'DM Mono', monospace; font-size: 10px; color: #5C5854; font-weight: 400; }
+    .cm.s { font-size: 11px; font-style: italic; color: #5C5854; }
+    .cm.w { font-style: italic; color: #5C5854; }
+    .cr { display: flex; align-items: stretch; border: 1.5px solid #1A1714; border-radius: 3px; overflow: hidden; }
+    #cin {
+      flex: 1; background: #FFFFFF; border: none; outline: none;
+      font-family: 'DM Sans', sans-serif; font-size: 13px; color: #1A1714;
+      padding: 10px 12px;
+    }
+    #cin::placeholder { color: #5C5854; }
+    #cgo {
+      background: #1A1714; border: none;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
+      color: #FFFFFF; cursor: pointer; padding: 10px 16px;
+      transition: background .14s; white-space: nowrap; font-weight: 600;
+    }
+    #cgo:hover { background: #3A3532; }
+    .rn { margin-top: 8px; font-size: 11px; color: #5C5854; font-style: italic; }
+
+    /* ── INTEL NOTE ── */
+    .intel-note {
+      background: #F0EEE9; border: 1px solid #C8C2BB; border-radius: 3px;
+      padding: 10px 14px; margin-bottom: 16px;
+      font-size: 11.5px; color: #3A3532; line-height: 1.6;
+    }
+    .intel-note strong { color: #1A1714; }
+  </style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <div class="eye">FY 2026 · Sales Pipeline</div>
+    <div class="ttl">SPARK Revenue Dashboard</div>
+  </div>
+  <div class="hdr-r">
+    <div>
+      <div class="hdr-tgt">Annual Target · $1,500,000</div>
+      <div class="hdr-date" id="hdrDate"></div>
+    </div>
+    <button class="rfsh" id="rfshBtn" onclick="doRefresh()">
+      <span class="ri" id="ri">↻</span>
+      Refresh Data
+    </button>
+    <div class="sync-ts" id="syncTs">Loading…</div>
+  </div>
+</div>
+
+<div class="krow" id="krow"></div>
+
+<div class="nav">
+  <button class="nb on" onclick="tab('acts',this)">Monthly Activities</button>
+  <button class="nb" onclick="tab('chart',this)">Revenue Chart</button>
+  <button class="nb" onclick="tab('intel',this)">Sales Intelligence</button>
+</div>
+
+<div class="leg-row">
+  <span class="lg"><span class="lc" style="color:#0F2540">P</span> P/O Received</span>
+  <span class="lg"><span class="lc" style="color:#1B3A65">V</span> Verbal Confirmed</span>
+  <span class="lg"><span class="lc" style="color:#173D28">F</span> Forecasted</span>
+  <span class="lg"><span class="lc" style="color:#4A330F">Q</span> Quoted</span>
+  <span class="lg"><span class="lc" style="color:#4A330F">T</span> Target</span>
+  <span class="lg"><span class="lc" style="color:#5C1710">L</span> Lost</span>
+  <span class="lg"><span class="lc" style="color:#5C5854">E</span> Excluded</span>
+</div>
+
+<div id="pn-acts" class="pn on"><div class="acts" id="acts"></div></div>
+<div id="pn-chart" class="pn">
+  <div class="chp">
+    <div class="cht">Cumulative Revenue</div>
+    <div class="chd">Won (P+V), Projected (P+V+F+Q), and linear annual target — Jan to Dec 2026</div>
+    <canvas id="rc" height="300"></canvas>
+    <div class="cl-row">
+      <div class="cli"><div class="cll" style="background:#1B3558"></div>Won (P+V)</div>
+      <div class="cli"><div class="cll" style="border-top:2px dashed #1F5C38;height:0;width:22px"></div>Projected incl. F+Q</div>
+      <div class="cli"><div class="cll" style="border-top:2px dashed #B0A89E;height:0;width:22px"></div>Annual Target $1.5M</div>
+    </div>
+    <div class="cfn" id="chartNote"></div>
+  </div>
+</div>
+<div id="pn-intel" class="pn">
+  <div class="inp">
+    <div class="int">Sales Intelligence</div>
+    <div class="ind">Ask anything about the 2026 pipeline — sponsors, revenue gaps, deal status, or specific events.</div>
+    <div class="intel-note">
+      <strong>Note:</strong> This is a standalone deployment. The AI chat feature is only available inside the Claude desktop app. Data below reflects the pipeline as of the last manual update.
+    </div>
+    <div class="qr" id="qr"></div>
+    <div id="clog"><div class="cm s">Chat is available in the Claude app version of this dashboard.</div></div>
+    <div class="cr">
+      <input id="cin" placeholder="Available in Claude app only…" disabled>
+      <button id="cgo" disabled style="opacity:.4;cursor:not-allowed">Send →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const AT = 1500000;
+
+const EV = [
+  {d:'01/14',m:'January 2026',e:'Tech Partners Networking',sp:[{v:'Apptio IBM',a:3000,s:'P',p:'Rueburn'}]},
+  {d:'01/29',m:'January 2026',e:'IMDA Workshop #3/3 (2025 Contract)',sp:[{v:'IMDA',a:19200,s:'P',p:'Lucas'}]},
+  {d:'02/03',m:'February 2026',e:'CNY — Lunch',sp:[{v:'Redis',a:3500,s:'P',p:'Maisie'},{v:'SUSE',a:4000,s:'P',p:'Denys'},{v:'Rubrik',a:3400,s:'P',p:'Claire'},{v:'Akamai',a:3000,s:'P',p:'Benson'}]},
+  {d:'02/05',m:'February 2026',e:'CNY — Dinner',sp:[{v:'Redis',a:4000,s:'P',p:'Maisie'},{v:'Rubrik',a:4000,s:'P',p:'Claire'},{v:'Akamai',a:3000,s:'P',p:'Benson Koh'},{v:'PingCap',a:3000,s:'P',p:'Yang Yan'}]},
+  {d:'02/05',m:'February 2026',e:'CNY Hamper Billing',r:'Bundled with CNY events above',sp:[{v:'Akamai',a:0,s:'P'},{v:'Rubrik',a:0,s:'P'},{v:'SUSE',a:0,s:'P'},{v:'PingCap',a:0,s:'P'},{v:'F5',a:0,s:'P'},{v:'Redis',a:0,s:'L'}]},
+  {d:'03/06',m:'March 2026',e:'Tech Trends @ Punggol Digital District',sp:[{v:'Snowflake',a:20000,s:'V',p:'Patricia Leong'},{v:'Apptio',a:22500,s:'V',p:'Rueburn'},{v:'Tanium',a:2500,s:'V',p:'Suzanne'},{v:'HPE',a:20000,s:'V',p:'Vinny/Abhishek'},{v:'Sambanova',a:22500,s:'V',p:'Shoghik/Nicole'},{v:'Freshworks',a:0,s:'L',p:'Arunima'},{v:'Rogue Asia',a:0,s:'L',p:'James'},{v:'Akamai',a:0,s:'L',p:'Benson'},{v:'Cloud Kinetics',a:16000,s:'L',p:'Felicia'},{v:'Teamviewer',a:0,s:'L'},{v:'Okta',a:0,s:'L'},{v:'Cohesity',a:0,s:'L',p:'Poh Liong'}]},
+  {d:'03/12',m:'March 2026',e:'Distinguished CEO Series — Snowflake',r:'Bundled with IO2026 SG',sp:[{v:'Snowflake',a:25000,s:'V',p:'Patricia'}]},
+  {d:'03/16',m:'March 2026',e:'ServiceNow Speaking Engagements — HK',sp:[{v:'ServiceNow',a:8000,s:'V',p:'Michelle'}]},
+  {d:'03/31',m:'March 2026',e:'Distinguished CEO Series — Suse',sp:[{v:'Suse',a:20000,s:'L',p:'Denys'}]},
+  {d:'04/01',m:'April 2026',e:'Enable — Mizuho',sp:[{v:'Red Hat',a:5000,s:'P',p:'Samantha Ong'},{v:'NTT',a:0,s:'V'},{v:'Veeam',a:5000,s:'L',p:'Chong Meng'}]},
+  {d:'04/07',m:'April 2026',e:'Enable — LTA',sp:[{v:'Red Hat',a:7000,s:'P',p:'Samantha Ong'},{v:'F5',a:8000,s:'P',p:'Sharon'}]},
+  {d:'04/15',m:'April 2026',e:'Sambanova Distinguished Tech Leader',r:'Quoted $12k → discounted to $8k',sp:[{v:'Sambanova',a:8000,s:'V'}]},
+  {d:'04/22',m:'April 2026',e:'Distinguished CXO Series — Apple',sp:[{v:'Apple',a:20000,s:'V',p:'Adrian, Jessica'}]},
+  {d:'04/24',m:'April 2026',e:'iCompaz Roundtable',sp:[{v:'iCompaz',a:7500,s:'V'},{v:'Rubrik',a:6000,s:'L'}]},
+  {d:'05/07',m:'May 2026',e:'IMDA Workshop #1/3',sp:[{v:'IMDA',a:19200,s:'V',p:'Lucas'}]},
+  {d:'05/14',m:'May 2026',e:'HK Breakfast Leaders Circle',sp:[{v:'Apptio',a:22500,s:'V',p:'Rueburn'},{v:'Veeam',a:2000,s:'V',p:'Pacila'}]},
+  {d:'05/20',m:'May 2026',e:'ATX Summit',sp:[{v:'Fortinet',a:10000,s:'P'},{v:'Akamai',a:8000,s:'P'},{v:'Info-Tech',a:5000,s:'V'},{v:'Snowflake',a:12000,s:'V'},{v:'Lenovo',a:15000,s:'V'},{v:'Redis',a:15000,s:'L'},{v:'Vectra',a:15000,s:''},{v:'Purestorage',a:15000,s:''},{v:'F5',a:10000,s:''},{v:'Suse',a:10000,s:''},{v:'Freshworks',a:10000,s:''},{v:'Blueprism',a:10000,s:''},{v:'Google WS',a:10000,s:''}]},
+  {d:'05/20',m:'May 2026',e:'Info-Tech Roundtable',sp:[{v:'Info-Tech',a:5000,s:'V'}]},
+  {d:'05/20',m:'May 2026',e:'F5 Dinner',sp:[{v:'F5',a:7000,s:'V',p:'Lisa'}]},
+  {d:'05/21',m:'May 2026',e:'Distinguished CEO Series — Veeam',sp:[{v:'Veeam',a:80000,s:'V',p:'Daphne'}]},
+  {d:'06/01',m:'June 2026',e:'Temasek AI Day',r:'1st half June — pricing TBD',sp:[{v:'Redis',a:0,s:''},{v:'Tanium',a:0,s:''},{v:'Snowflake',a:0,s:''},{v:'Sambanova',a:0,s:''},{v:'Redhat',a:0,s:''},{v:'Apptio',a:0,s:''},{v:'Google Cloud',a:0,s:''},{v:'AWS',a:0,s:''},{v:'F5',a:0,s:''},{v:'HPE',a:0,s:''},{v:'Workato',a:0,s:''},{v:'Akamai',a:0,s:''},{v:'Vast Data',a:0,s:''},{v:'Dynatrace',a:0,s:''},{v:'Freshworks',a:0,s:''},{v:'Veeam',a:0,s:''},{v:'Rubrik',a:0,s:''},{v:'Cisco',a:0,s:''},{v:'Huawei',a:0,s:''}]},
+  {d:'06/03',m:'June 2026',e:'Distinguished CEO Series — Akamai',sp:[{v:'Akamai',a:20000,s:'V',p:'Els Shek'}]},
+  {d:'06/05',m:'June 2026',e:'Red Hat Public Sector Day',sp:[{v:'Red Hat',a:30000,s:'P',p:'Sharon Ng'}]},
+  {d:'07/01',m:'July 2026',e:'Distinguished CEO — Vectra AI Dinner',sp:[{v:'Vectra',a:0,s:'',p:'Kathrine'}]},
+  {d:'07/07',m:'July 2026',e:'Enable (LTA VRLS Team)',sp:[{v:'Hashicorp',a:4000,s:'P'},{v:'Snowflake',a:4000,s:'V'}]},
+  {d:'07/07',m:'July 2026',e:'Aerospike 1:1 Brief (DANA Indonesia)',sp:[{v:'Aerospike',a:2000,s:'V'}]},
+  {d:'07/09',m:'July 2026',e:'iCompaz/MS Office Breakfast Roundtable',r:'$5,000 SGD @ 1.3 rate',sp:[{v:'iCompaz',a:3846,s:'V'}]},
+  {d:'07/15',m:'July 2026',e:'SPARK Durians',r:'Target $20,000',sp:[{v:'Hashicorp',a:5000,s:'F'},{v:'Crowdstrike',a:5000,s:'F'},{v:'Apptio',a:4000,s:'Q'},{v:'Aerospike',a:5000,s:'L'}]},
+  {d:'07/16',m:'July 2026',e:'ServiceNow Speaker Engagement',sp:[{v:'ServiceNow',a:8000,s:'V',p:'Jayron'}]},
+  {d:'07/22',m:'July 2026',e:'Suse Executive Roundtable (Malaysia)',sp:[{v:'Suse',a:25000,s:'Q'}]},
+  {d:'07/24',m:'July 2026',e:'Suse AI Masterclass (Singapore)',sp:[{v:'Suse',a:30000,s:'Q'}]},
+  {d:'08/06',m:'August 2026',e:'Suse AI Masterclass (Malaysia)',sp:[{v:'Suse',a:30000,s:'Q'}]},
+  {d:'08/18',m:'August 2026',e:'Thai DGA Workshop',r:'Target $30,000 — 3 vendors',sp:[{v:'F5',a:10000,s:'F'},{v:'Suse',a:10000,s:'F'}]},
+  {d:'08/19',m:'August 2026',e:'ServiceNow Engagement TBC',sp:[{v:'ServiceNow',a:5000,s:'F',p:'Michele'}]},
+  {d:'08/24',m:'August 2026',e:'Snowflake DataWorld',sp:[{v:'Snowflake',a:20000,s:'F'}]},
+  {d:'08/30',m:'August 2026',e:'SafeAI.sg Council',r:'Date TBC',sp:[{v:'Veeam',a:0,s:'P'},{v:'Snowflake',a:10000,s:'F'},{v:'Google Workspace',a:10000,s:'F'}]},
+  {d:'08/30',m:'August 2026',e:'Enable (LTA CIO Office)',r:'Part 2 engagement',sp:[{v:'F5',a:0,s:'P'},{v:'HashiCorp',a:4000,s:'F'}]},
+  {d:'08/30',m:'August 2026',e:'Enable — Singapore Pools',r:'Date TBC',sp:[{v:'Aerospike',a:10000,s:'V'}]},
+  {d:'09/02',m:'September 2026',e:'SPARK Harness AI Forum',r:'Target $80,000',sp:[{v:'Snowflake',a:10000,s:'F'},{v:'Huawei',a:10000,s:'F'},{v:'Hashicorp',a:20000,s:'F'}]},
+  {d:'09/04',m:'September 2026',e:'IRAS Training',r:'$6,000 SGD',sp:[{v:'IRAS',a:4615,s:'P'}]},
+  {d:'09/13',m:'September 2026',e:'SPARK Hangzhou Study Trip',r:'Target $200,000',sp:[{v:'Snowflake',a:20000,s:'F'},{v:'Veeam',a:20000,s:'Q'},{v:'Hashicorp',a:20000,s:'F'},{v:'Huawei',a:20000,s:'F'},{v:'Tanium',a:0,s:'F'},{v:'Redhat',a:0,s:'F'},{v:'Apptio',a:0,s:'F'},{v:'F5',a:0,s:'F'},{v:'Fortinet',a:0,s:'F'}]},
+  {d:'09/17',m:'September 2026',e:'IMDA Workshop #2/3',r:'Maybe cancelled — TBC',sp:[{v:'IMDA',a:19200,s:'L',p:'Lucas'}]},
+  {d:'09/30',m:'September 2026',e:'Hashicorp Executive Study Tour',r:'Later in year',sp:[{v:'Hashicorp',a:36000,s:'F'}]},
+  {d:'10/01',m:'October 2026',e:'Tech Trends — Bangkok',r:'Sponsor outreach to begin',sp:[{v:'TBD',a:40000,s:'T'}]},
+  {d:'10/01',m:'October 2026',e:'Tech Trends — Hong Kong',r:'Terminal3 excluded · Target $50,000',sp:[{v:'Fortinet',a:0,s:''},{v:'AWS',a:0,s:''},{v:'Snowflake',a:0,s:''},{v:'Sambanova',a:0,s:''},{v:'Akamai',a:0,s:''},{v:'F5',a:0,s:''},{v:'HPE',a:0,s:''},{v:'Google Cloud',a:0,s:''},{v:'Checkpoint',a:0,s:''},{v:'ServiceNow',a:0,s:''},{v:'Microsoft',a:0,s:''},{v:'Terminal3',a:0,s:'E'}]},
+  {d:'10/01',m:'October 2026',e:'Thai DGA STACKx Forum',r:'Target $70,000',sp:[{v:'TBD',a:70000,s:'T'}]},
+  {d:'10/11',m:'October 2026',e:'Rubrik F1 Event',r:'Target $30,000',sp:[{v:'Rubrik',a:10000,s:'F'}]},
+  {d:'10/14',m:'October 2026',e:'Akamai Govware Lunch Roundtable',sp:[{v:'Akamai',a:12000,s:'V',p:'Els Shek'}]},
+  {d:'10/14',m:'October 2026',e:'Lenovo/Microsoft Govware Lunch RT',r:'Date TBC',sp:[{v:'Lenovo',a:15000,s:'F'}]},
+  {d:'11/04',m:'November 2026',e:'SafeAI.sg Forum',r:'Target $80,000',sp:[{v:'Hashicorp',a:20000,s:'F'},{v:'Thales',a:0,s:''}]},
+  {d:'11/30',m:'November 2026',e:'SPARK Christmas Celebration',r:'Target $25,000',sp:[{v:'TBD',a:25000,s:'T'}]},
+];
+
+const UNDATED = [
+  {e:'Aerospike Executive Roundtable',sp:[{v:'Aerospike',a:20000,s:'V'}]},
+  {e:'Crowdstrike Executive Roundtable',sp:[{v:'Crowdstrike',a:20000,s:'F'}]},
+  {e:'Enable — Company TBC',sp:[{v:'Tanium',a:7500,s:'V'},{v:'Cloud Kinetics',a:16000,s:'L'}]},
+  {e:'SPARK Public Sector Day',r:'Likely PDD — date TBD',sp:[{v:'Tanium',a:0,s:''},{v:'Snowflake',a:0,s:''},{v:'Sambanova',a:0,s:''},{v:'Redhat',a:0,s:''},{v:'Apptio',a:0,s:''},{v:'Google Cloud',a:0,s:''},{v:'AWS',a:0,s:''},{v:'F5',a:0,s:''},{v:'HPE',a:0,s:''}]},
+];
+
+const MO = ['January 2026','February 2026','March 2026','April 2026','May 2026','June 2026','July 2026','August 2026','September 2026','October 2026','November 2026','December 2026'];
+const PAST = new Set(['January 2026','February 2026','March 2026','April 2026','May 2026','June 2026']);
+
+// Set header date
+const now = new Date();
+document.getElementById('hdrDate').textContent = now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+document.getElementById('syncTs').textContent = 'Data as of 30 Jun 2026';
+
+function fmt(a){if(!a)return'';if(a>=1e6)return'$'+(a/1e6).toFixed(2).replace(/\.?0+$/,'')+'M';if(a>=1000)return'$'+(a/1000).toFixed(0)+'k';return'$'+a.toLocaleString();}
+function fmtF(a){return'$'+a.toLocaleString();}
+function wonA(ev){return ev.sp.filter(s=>s.s==='P'||s.s==='V').reduce((t,s)=>t+(s.a||0),0);}
+function fqA(ev){return ev.sp.filter(s=>s.s==='F'||s.s==='Q').reduce((t,s)=>t+(s.a||0),0);}
+function lostA(ev){return ev.sp.filter(s=>s.s==='L').reduce((t,s)=>t+(s.a||0),0);}
+
+const allEv = [...EV, ...UNDATED];
+let tW=0, tFQ=0, tL=0;
+allEv.forEach(e=>{tW+=wonA(e);tFQ+=fqA(e);tL+=lostA(e);});
+const tP = tW + tFQ;
+
+document.getElementById('krow').innerHTML = `
+<div class="kc"><div class="kl">Won Revenue</div><div class="kv w">${fmt(tW)}</div><div class="ks">${((tW/AT)*100).toFixed(1)}% of target</div></div>
+<div class="kc"><div class="kl">Projected Total</div><div class="kv g">${fmt(tP)}</div><div class="ks">${((tP/AT)*100).toFixed(1)}% of target</div></div>
+<div class="kc"><div class="kl">Annual Target</div><div class="kv">${fmt(AT)}</div><div class="ks">Linear distribution</div></div>
+<div class="kc"><div class="kl">Pipeline F+Q</div><div class="kv a">${fmt(tFQ)}</div><div class="ks">Unconfirmed active</div></div>
+<div class="kc"><div class="kl">Lost Revenue</div><div class="kv r">${fmt(tL)}</div><div class="ks">Win rate ${((tW/(tW+tL))*100).toFixed(0)}%</div></div>
+<div class="kc"><div class="kl">Gap to Target</div><div class="kv ${(AT-tP)>0?'r':''}">${(AT-tP)>0?'-'+fmt(AT-tP):'On track'}</div><div class="ks">${(AT-tP)>0?'Pipeline needed':'Projected covers'}</div></div>`;
+
+function buildSp(sp){
+  let show=sp.filter(s=>s.v);
+  const MAX=6, more=show.length>MAX?show.splice(MAX):[];
+  let h=show.map(s=>{
+    const ac=s.a>0?` <span class="sa">${fmtF(s.a)}</span>`:'';
+    const tt=s.p?` title="PIC: ${s.p}"`:'';
+    return `<span class="sp ${s.s||''}"${tt}>${s.v}${ac}<span class="ss">${s.s||'TBD'}</span></span>`;
+  }).join('');
+  if(more.length){
+    const id='x'+Math.random().toString(36).slice(2);
+    const mH=more.map(s=>{const ac=s.a>0?` <span class="sa">${fmtF(s.a)}</span>`:'';return`<span class="sp ${s.s||''}">${s.v}${ac}<span class="ss">${s.s||'TBD'}</span></span>`;}).join('');
+    h+=`<span class="smore" onclick="document.getElementById('${id}').style.display='contents';this.remove()">+${more.length} more</span><span id="${id}" style="display:none">${mH}</span>`;
+  }
+  return h;
+}
+
+function evRow(e){
+  const ew=wonA(e), ef=fqA(e);
+  return `<div class="ev">
+<div class="ed">${e.d||'—'}</div>
+<div><div class="en">${e.e}</div><div class="esp">${buildSp(e.sp)}</div>${e.r?`<div class="erk">${e.r}</div>`:''}</div>
+<div class="ea ${ew>0?'w':ef>0?'g':'n'}">${ew>0?fmtF(ew):ef>0?fmtF(ef):'—'}</div>
+</div>`;
+}
+
+function buildActs(){
+  const grp={};
+  EV.forEach(e=>{if(!e.m||!MO.includes(e.m))return;if(!grp[e.m])grp[e.m]=[];grp[e.m].push(e);});
+  let h='';
+  MO.forEach(m=>{
+    const evs=grp[m]; if(!evs)return;
+    const mw=evs.reduce((t,e)=>t+wonA(e),0);
+    const mfq=evs.reduce((t,e)=>t+fqA(e),0);
+    const past=PAST.has(m);
+    h+=`<div class="msec">
+<div class="mh" onclick="togM(this)">
+  <span class="mn ${past?'cur':''}">${m}</span>
+  <div class="mm">
+    ${mw>0?`<span class="mw">${fmtF(mw)}</span>`:''}
+    ${mfq>0?`<span class="mp">+${fmtF(mfq)}</span>`:''}
+    ${mw===0&&mfq===0?`<span class="mn0">TBD</span>`:''}
+    <span class="mt ${past?'o':''}">▶</span>
+  </div>
+</div>
+<div class="mb ${past?'o':''}">${evs.map(evRow).join('')}</div>
+</div>`;
+  });
+  const udW=UNDATED.reduce((t,e)=>t+wonA(e),0);
+  const udFQ=UNDATED.reduce((t,e)=>t+fqA(e),0);
+  h+=`<div class="msec">
+<div class="mh" onclick="togM(this)">
+  <span class="mn" style="font-style:italic;font-size:14px">Undated / Ongoing</span>
+  <div class="mm">
+    ${udW>0?`<span class="mw">${fmtF(udW)}</span>`:''}
+    ${udFQ>0?`<span class="mp">+${fmtF(udFQ)}</span>`:''}
+    <span class="mt">▶</span>
+  </div>
+</div>
+<div class="mb">${UNDATED.map(evRow).join('')}</div>
+</div>`;
+  document.getElementById('acts').innerHTML=h;
+}
+buildActs();
+
+function togM(hdr){
+  const b=hdr.nextElementSibling, t=hdr.querySelector('.mt');
+  b.classList.toggle('o'); t.classList.toggle('o');
+}
+
+function tab(id,btn){
+  document.querySelectorAll('.pn').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('pn-'+id).classList.add('on');
+  btn.classList.add('on');
+  if(id==='chart') setTimeout(drawChart,40);
+}
+
+// Chart
+const wonM=[22200,27900,120500,55500,185700,50000,21846,10000,4615,12000,0,0];
+const fqM=[0,0,0,0,0,0,69000,99000,156000,25000,20000,0];
+let cW=[], cP=[], rw=0, rp=0;
+for(let i=0;i<12;i++){rw+=wonM[i];rp+=wonM[i]+fqM[i];cW.push(rw);cP.push(rp);}
+const cT=Array.from({length:12},(_,i)=>AT*(i+1)/12);
+const MNS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const udWon=UNDATED.reduce((t,e)=>t+wonA(e),0);
+const udFQtotal=UNDATED.reduce((t,e)=>t+fqA(e),0);
+
+function drawChart(){
+  const cv=document.getElementById('rc'); if(!cv)return;
+  const W=cv.parentElement.clientWidth-4, H=300;
+  cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const pd={t:24,r:16,b:36,l:68};
+  const cw=W-pd.l-pd.r, ch=H-pd.t-pd.b;
+  const xP=i=>pd.l+i*(cw/11);
+  const yP=v=>pd.t+ch-(v/AT)*ch;
+  ctx.strokeStyle='#E8E4DE'; ctx.lineWidth=1;
+  for(let g=0;g<=5;g++){
+    const y=pd.t+(ch/5)*g;
+    ctx.beginPath(); ctx.moveTo(pd.l,y); ctx.lineTo(pd.l+cw,y); ctx.stroke();
+    ctx.fillStyle='#5C5854'; ctx.font="10px 'DM Mono',monospace"; ctx.textAlign='right';
+    const lv=AT*(1-g/5);
+    ctx.fillText(lv>=1e6?'$'+(lv/1e6).toFixed(1)+'M':'$'+(lv/1e3).toFixed(0)+'k',pd.l-6,y+3.5);
+  }
+  MNS.forEach((m,i)=>{
+    ctx.fillStyle='#5C5854'; ctx.font="10px 'DM Mono',monospace"; ctx.textAlign='center';
+    ctx.fillText(m,xP(i),H-6);
+  });
+  // Today marker (end of June 2026)
+  const tx=xP(5)+(30/30)*(xP(6)-xP(5))-4;
+  ctx.save(); ctx.strokeStyle='#C8C2BB'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(tx,pd.t); ctx.lineTo(tx,pd.t+ch); ctx.stroke(); ctx.restore();
+  ctx.fillStyle='#3A3532'; ctx.font="9px 'DM Mono',monospace"; ctx.textAlign='center';
+  ctx.fillText('Today',tx,pd.t-8);
+
+  function line(data,color,dash){
+    ctx.save(); ctx.strokeStyle=color; ctx.lineWidth=2;
+    if(dash) ctx.setLineDash(dash);
+    ctx.beginPath();
+    data.forEach((v,i)=>{i===0?ctx.moveTo(xP(i),yP(v)):ctx.lineTo(xP(i),yP(v));});
+    ctx.stroke(); ctx.restore();
+    data.forEach((v,i)=>{ctx.fillStyle=color;ctx.beginPath();ctx.arc(xP(i),yP(v),3,0,Math.PI*2);ctx.fill();});
+  }
+  line(cT,'#B0A89E',[5,4]);
+  line(cP,'#1F5C38',[4,3]);
+  line(cW,'#1B3558');
+  const note=document.getElementById('chartNote');
+  if(note) note.textContent=`Today = 30 Jun 2026 · $125,000/month linear target · Chart reflects dated events only; ${udWon>0?'$'+udWon.toLocaleString()+' won':'$0 won'} and $${udFQtotal.toLocaleString()} F+Q from undated items shown in KPI strip above.`;
+}
+window.addEventListener('load',()=>setTimeout(drawChart,100));
+window.addEventListener('resize',drawChart);
+
+// Refresh (stub for standalone — no Claude API in this deployment)
+function doRefresh(){
+  const btn=document.getElementById('rfshBtn');
+  btn.disabled=true;
+  btn.querySelector('.ri').style.animation='spin .8s linear infinite';
+  setTimeout(()=>{
+    btn.disabled=false;
+    btn.querySelector('.ri').style.animation='';
+    document.getElementById('syncTs').textContent='Data as of 30 Jun 2026 (update via Claude to refresh)';
+  },1500);
+}
+</script>
+</body>
+</html>
