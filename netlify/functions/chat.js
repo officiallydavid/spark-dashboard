@@ -110,8 +110,14 @@ Hashicorp: $80,000 total active ($4k P + $5k F + $20k F Harness + $20k F Hangzho
   });
 
   if (!res.ok) {
-    const err = await res.text();
-    return { statusCode: 500, headers: {'Content-Type':'application/json'}, body: JSON.stringify({ error: 'API error', detail: err }) };
+    const errText = await res.text();
+    let errMsg = `Anthropic API returned ${res.status}`;
+    try {
+      const errJson = JSON.parse(errText);
+      if (errJson.error?.message) errMsg = errJson.error.message;
+    } catch(e) {}
+    if (res.status === 401) errMsg = 'Invalid or missing API key — check ANTHROPIC_API_KEY in Netlify environment variables.';
+    return { statusCode: 500, headers: {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'}, body: JSON.stringify({ error: errMsg }) };
   }
 
   const data = await res.json();

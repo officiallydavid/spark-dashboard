@@ -607,7 +607,7 @@ async function sendChat(){
     });
     const data=await res.json();
     thinking.remove();
-    addMsg('a', data.reply || ('Error: '+(data.error||'Unknown error')));
+    addMsg('a', data.reply || ('⚠ '+(data.error||'Unknown error')));
   } catch(e){
     thinking.remove();
     addMsg('a','Could not reach the AI — check your Netlify function is deployed and ANTHROPIC_API_KEY is set.');
