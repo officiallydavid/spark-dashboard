@@ -505,11 +505,11 @@ function fmtL(v){
 
 function drawChart(){
   const cv=document.getElementById('rc'); if(!cv)return;
-  const W=cv.parentElement.clientWidth-4, H=360;
+  const W=cv.parentElement.clientWidth-4, H=440;
   cv.width=W; cv.height=H;
   const ctx=cv.getContext('2d');
   ctx.clearRect(0,0,W,H);
-  const pd={t:36,r:20,b:44,l:72};
+  const pd={t:54,r:24,b:68,l:96};
   const cw=W-pd.l-pd.r, ch=H-pd.t-pd.b;
   const xP=i=>pd.l+i*(cw/11);
   const yP=v=>pd.t+ch-(v/AT)*ch;
@@ -519,23 +519,23 @@ function drawChart(){
   for(let g=0;g<=5;g++){
     const y=pd.t+(ch/5)*g;
     ctx.beginPath(); ctx.moveTo(pd.l,y); ctx.lineTo(pd.l+cw,y); ctx.stroke();
-    ctx.fillStyle='#5C5854'; ctx.font="12px 'DM Mono',monospace"; ctx.textAlign='right';
+    ctx.fillStyle='#5C5854'; ctx.font="24px 'DM Mono',monospace"; ctx.textAlign='right';
     const lv=AT*(1-g/5);
-    ctx.fillText(lv>=1e6?'$'+(lv/1e6).toFixed(1)+'M':'$'+(lv/1e3).toFixed(0)+'k',pd.l-8,y+4);
+    ctx.fillText(lv>=1e6?'$'+(lv/1e6).toFixed(1)+'M':'$'+(lv/1e3).toFixed(0)+'k',pd.l-10,y+8);
   }
 
   // Month labels
   MNS.forEach((m,i)=>{
-    ctx.fillStyle='#3A3532'; ctx.font="12px 'DM Mono',monospace"; ctx.textAlign='center';
-    ctx.fillText(m,xP(i),H-10);
+    ctx.fillStyle='#3A3532'; ctx.font="24px 'DM Mono',monospace"; ctx.textAlign='center';
+    ctx.fillText(m,xP(i),H-14);
   });
 
   // Today marker
   const tx=xP(5)+(30/30)*(xP(6)-xP(5))-4;
   ctx.save(); ctx.strokeStyle='#C8C2BB'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
   ctx.beginPath(); ctx.moveTo(tx,pd.t); ctx.lineTo(tx,pd.t+ch); ctx.stroke(); ctx.restore();
-  ctx.fillStyle='#3A3532'; ctx.font="11px 'DM Mono',monospace"; ctx.textAlign='center';
-  ctx.fillText('Today',tx,pd.t-12);
+  ctx.fillStyle='#3A3532'; ctx.font="22px 'DM Mono',monospace"; ctx.textAlign='center';
+  ctx.fillText('Today',tx,pd.t-18);
 
   // Draw a line + dots
   function line(data,color,dash){
@@ -556,7 +556,7 @@ function drawChart(){
   line(cW,'#1B3558');
 
   // ── DATA LABELS ──
-  ctx.font="bold 11px 'DM Mono',monospace";
+  ctx.font="bold 22px 'DM Mono',monospace";
   cW.forEach((v,i)=>{
     const x=xP(i), y=yP(v);
     const isShared = cP[i]===cW[i]; // Jan–Jun: projected = won
@@ -564,14 +564,14 @@ function drawChart(){
     if(isShared){
       // Single label above the shared dot
       ctx.fillStyle='#1B3558'; ctx.textAlign='center';
-      ctx.fillText(fmtL(v), x, y-12);
+      ctx.fillText(fmtL(v), x, y-22);
     } else {
       // Won label BELOW its dot (lower line, more room below)
       ctx.fillStyle='#1B3558'; ctx.textAlign='center';
-      ctx.fillText(fmtL(v), x, y+18);
+      ctx.fillText(fmtL(v), x, y+30);
       // Projected label ABOVE its dot (upper line, more room above)
       ctx.fillStyle='#1F5C38'; ctx.textAlign='center';
-      ctx.fillText(fmtL(cP[i]), x, yP(cP[i])-12);
+      ctx.fillText(fmtL(cP[i]), x, yP(cP[i])-22);
     }
   });
 
