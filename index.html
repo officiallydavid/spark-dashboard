@@ -245,13 +245,13 @@
     #cgo:hover { background: #3A3532; }
     .rn { margin-top: 8px; font-size: 11px; color: #5C5854; font-style: italic; }
 
-    /* ── INTEL NOTE ── */
-    .intel-note {
-      background: #F0EEE9; border: 1px solid #C8C2BB; border-radius: 3px;
-      padding: 10px 14px; margin-bottom: 16px;
-      font-size: 11.5px; color: #3A3532; line-height: 1.6;
+    /* ── AI RESPONSE BUBBLE ── */
+    .cm.a {
+      color: #1A1714; background: #F0EEE9;
+      padding: 7px 10px; border-radius: 3px;
+      border-left: 2px solid #C8C2BB;
+      white-space: pre-wrap;
     }
-    .intel-note strong { color: #1A1714; }
   </style>
 </head>
 <body>
@@ -310,14 +310,11 @@
   <div class="inp">
     <div class="int">Sales Intelligence</div>
     <div class="ind">Ask anything about the 2026 pipeline — sponsors, revenue gaps, deal status, or specific events.</div>
-    <div class="intel-note">
-      <strong>Note:</strong> This is a standalone deployment. The AI chat feature is only available inside the Claude desktop app. Data below reflects the pipeline as of the last manual update.
-    </div>
     <div class="qr" id="qr"></div>
-    <div id="clog"><div class="cm s">Chat is available in the Claude app version of this dashboard.</div></div>
+    <div id="clog"><div class="cm s">Ask a question above — Claude will answer using the full pipeline data.</div></div>
     <div class="cr">
-      <input id="cin" placeholder="Available in Claude app only…" disabled>
-      <button id="cgo" disabled style="opacity:.4;cursor:not-allowed">Send →</button>
+      <input id="cin" placeholder="Ask about your pipeline…" onkeydown="if(event.key==='Enter')sendChat()">
+      <button id="cgo" onclick="sendChat()">Send →</button>
     </div>
   </div>
 </div>
@@ -500,53 +497,130 @@ const MNS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','De
 const udWon=UNDATED.reduce((t,e)=>t+wonA(e),0);
 const udFQtotal=UNDATED.reduce((t,e)=>t+fqA(e),0);
 
+function fmtL(v){
+  if(v>=1000000) return '$'+(v/1000000).toFixed(1)+'M';
+  if(v>=1000) return '$'+Math.round(v/1000)+'k';
+  return '$'+v;
+}
+
 function drawChart(){
   const cv=document.getElementById('rc'); if(!cv)return;
-  const W=cv.parentElement.clientWidth-4, H=300;
+  const W=cv.parentElement.clientWidth-4, H=360;
   cv.width=W; cv.height=H;
   const ctx=cv.getContext('2d');
   ctx.clearRect(0,0,W,H);
-  const pd={t:24,r:16,b:36,l:68};
+  const pd={t:36,r:20,b:44,l:72};
   const cw=W-pd.l-pd.r, ch=H-pd.t-pd.b;
   const xP=i=>pd.l+i*(cw/11);
   const yP=v=>pd.t+ch-(v/AT)*ch;
+
+  // Grid lines + Y-axis labels
   ctx.strokeStyle='#E8E4DE'; ctx.lineWidth=1;
   for(let g=0;g<=5;g++){
     const y=pd.t+(ch/5)*g;
     ctx.beginPath(); ctx.moveTo(pd.l,y); ctx.lineTo(pd.l+cw,y); ctx.stroke();
-    ctx.fillStyle='#5C5854'; ctx.font="10px 'DM Mono',monospace"; ctx.textAlign='right';
+    ctx.fillStyle='#5C5854'; ctx.font="12px 'DM Mono',monospace"; ctx.textAlign='right';
     const lv=AT*(1-g/5);
-    ctx.fillText(lv>=1e6?'$'+(lv/1e6).toFixed(1)+'M':'$'+(lv/1e3).toFixed(0)+'k',pd.l-6,y+3.5);
+    ctx.fillText(lv>=1e6?'$'+(lv/1e6).toFixed(1)+'M':'$'+(lv/1e3).toFixed(0)+'k',pd.l-8,y+4);
   }
+
+  // Month labels
   MNS.forEach((m,i)=>{
-    ctx.fillStyle='#5C5854'; ctx.font="10px 'DM Mono',monospace"; ctx.textAlign='center';
-    ctx.fillText(m,xP(i),H-6);
+    ctx.fillStyle='#3A3532'; ctx.font="12px 'DM Mono',monospace"; ctx.textAlign='center';
+    ctx.fillText(m,xP(i),H-10);
   });
-  // Today marker (end of June 2026)
+
+  // Today marker
   const tx=xP(5)+(30/30)*(xP(6)-xP(5))-4;
   ctx.save(); ctx.strokeStyle='#C8C2BB'; ctx.lineWidth=1; ctx.setLineDash([3,3]);
   ctx.beginPath(); ctx.moveTo(tx,pd.t); ctx.lineTo(tx,pd.t+ch); ctx.stroke(); ctx.restore();
-  ctx.fillStyle='#3A3532'; ctx.font="9px 'DM Mono',monospace"; ctx.textAlign='center';
-  ctx.fillText('Today',tx,pd.t-8);
+  ctx.fillStyle='#3A3532'; ctx.font="11px 'DM Mono',monospace"; ctx.textAlign='center';
+  ctx.fillText('Today',tx,pd.t-12);
 
+  // Draw a line + dots
   function line(data,color,dash){
-    ctx.save(); ctx.strokeStyle=color; ctx.lineWidth=2;
+    ctx.save(); ctx.strokeStyle=color; ctx.lineWidth=2.2;
     if(dash) ctx.setLineDash(dash);
     ctx.beginPath();
     data.forEach((v,i)=>{i===0?ctx.moveTo(xP(i),yP(v)):ctx.lineTo(xP(i),yP(v));});
     ctx.stroke(); ctx.restore();
-    data.forEach((v,i)=>{ctx.fillStyle=color;ctx.beginPath();ctx.arc(xP(i),yP(v),3,0,Math.PI*2);ctx.fill();});
+    data.forEach((v,i)=>{
+      ctx.fillStyle=color;
+      ctx.beginPath(); ctx.arc(xP(i),yP(v),3.5,0,Math.PI*2); ctx.fill();
+    });
   }
+
+  // Draw target first (behind others)
   line(cT,'#B0A89E',[5,4]);
   line(cP,'#1F5C38',[4,3]);
   line(cW,'#1B3558');
+
+  // ── DATA LABELS ──
+  ctx.font="bold 11px 'DM Mono',monospace";
+  cW.forEach((v,i)=>{
+    const x=xP(i), y=yP(v);
+    const isShared = cP[i]===cW[i]; // Jan–Jun: projected = won
+
+    if(isShared){
+      // Single label above the shared dot
+      ctx.fillStyle='#1B3558'; ctx.textAlign='center';
+      ctx.fillText(fmtL(v), x, y-12);
+    } else {
+      // Won label BELOW its dot (lower line, more room below)
+      ctx.fillStyle='#1B3558'; ctx.textAlign='center';
+      ctx.fillText(fmtL(v), x, y+18);
+      // Projected label ABOVE its dot (upper line, more room above)
+      ctx.fillStyle='#1F5C38'; ctx.textAlign='center';
+      ctx.fillText(fmtL(cP[i]), x, yP(cP[i])-12);
+    }
+  });
+
   const note=document.getElementById('chartNote');
-  if(note) note.textContent=`Today = 30 Jun 2026 · $125,000/month linear target · Chart reflects dated events only; ${udWon>0?'$'+udWon.toLocaleString()+' won':'$0 won'} and $${udFQtotal.toLocaleString()} F+Q from undated items shown in KPI strip above.`;
+  if(note) note.textContent=`Today = 30 Jun 2026 · $125,000/month linear target · Dark labels = Won (P+V), green labels = Projected (incl. F+Q) · Undated items ($${udWon.toLocaleString()} won, $${udFQtotal.toLocaleString()} F+Q) included in KPI strip only.`;
 }
 window.addEventListener('load',()=>setTimeout(drawChart,100));
 window.addEventListener('resize',drawChart);
 
-// Refresh (stub for standalone — no Claude API in this deployment)
+const QS=['Which month had the highest won revenue?','Top 5 sponsors by confirmed amount','Gap to hit the $1.5M target?','Which Q3/Q4 deals are still unconfirmed?','Snowflake total across all events','How much revenue was lost and why?'];
+document.getElementById('qr').innerHTML=QS.map(q=>`<button class="qb" onclick="askQ(this)">${q}</button>`).join('');
+
+function addMsg(cls,txt){
+  const d=document.getElementById('clog');
+  const m=document.createElement('div'); m.className='cm '+cls; m.textContent=txt;
+  d.appendChild(m); d.scrollTop=d.scrollHeight;
+}
+
+async function sendChat(){
+  const inp=document.getElementById('cin'), q=inp.value.trim();
+  if(!q) return;
+  addMsg('u',q); inp.value='';
+  inp.disabled=true; document.getElementById('cgo').disabled=true;
+  const thinking=document.createElement('div');
+  thinking.className='cm s'; thinking.textContent='Thinking…';
+  const log=document.getElementById('clog');
+  log.appendChild(thinking); log.scrollTop=log.scrollHeight;
+  try {
+    const res=await fetch('/.netlify/functions/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({message:q})
+    });
+    const data=await res.json();
+    thinking.remove();
+    addMsg('a', data.reply || ('Error: '+(data.error||'Unknown error')));
+  } catch(e){
+    thinking.remove();
+    addMsg('a','Could not reach the AI — check your Netlify function is deployed and ANTHROPIC_API_KEY is set.');
+  }
+  inp.disabled=false; document.getElementById('cgo').disabled=false; inp.focus();
+}
+
+function askQ(btn){
+  document.getElementById('cin').value=btn.textContent;
+  tab('intel',document.querySelector('.nb:nth-child(3)'));
+  sendChat();
+}
+
 function doRefresh(){
   const btn=document.getElementById('rfshBtn');
   btn.disabled=true;
