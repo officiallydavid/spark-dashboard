@@ -330,7 +330,7 @@
   </div>
   <div class="hdr-r">
     <div>
-      <div class="hdr-tgt">Annual Target · $1,500,000</div>
+      <div class="hdr-tgt">Annual Target · $1,200,000</div>
       <div class="hdr-date" id="hdrDate"></div>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
@@ -366,7 +366,7 @@
 <div id="pn-chart" class="pn">
   <div class="chp">
     <div class="cht">Cumulative Revenue</div>
-    <div class="chd">Won (P+V), Projected (P+V+F+Q), and linear annual target — Jan to Dec 2026</div>
+    <div class="chd">Won (P+V), Projected (P+V+F+Q), and linear annual target — Jan to Nov 2026</div>
     <canvas id="rc" height="300"></canvas>
     <div class="cl-row">
       <div class="cli"><div class="cll" style="background:#1B3558"></div>Won (P+V)</div>
@@ -390,7 +390,7 @@
 </div>
 
 <script>
-const AT = 1500000;
+const AT = 1200000;
 
 let EV = [
   {d:'01/14',m:'January 2026',e:'Tech Partners Networking',sp:[{v:'Apptio IBM',a:3000,s:'P',p:'Rueburn'}]},
@@ -560,7 +560,7 @@ function tab(id,btn){
 }
 
 // Chart
-const cT=Array.from({length:12},(_,i)=>AT*(i+1)/12);
+const cT=Array.from({length:12},(_,i)=>AT*Math.min(i+1,11)/11);
 const MNS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 let cW=[], cP=[];
 
@@ -659,12 +659,12 @@ function drawChart(){
   const udWon=UNDATED.reduce((t,e)=>t+wonA(e),0);
   const udFQtotal=UNDATED.reduce((t,e)=>t+fqA(e),0);
   const note=document.getElementById('chartNote');
-  if(note) note.textContent=`$125,000/month linear target · Dark labels = Won (P+V), green = Projected (F+Q) · Undated items ($${udWon.toLocaleString()} won, $${udFQtotal.toLocaleString()} F+Q) in KPI strip only.`;
+  if(note) note.textContent=`~$109,091/month linear target (Jan–Nov) · Dark labels = Won (P+V), green = Projected (F+Q) · Undated items ($${udWon.toLocaleString()} won, $${udFQtotal.toLocaleString()} F+Q) in KPI strip only.`;
 }
 window.addEventListener('load',()=>setTimeout(drawChart,100));
 window.addEventListener('resize',drawChart);
 
-const QS=['Which month had the highest won revenue?','Top 5 sponsors by confirmed amount','Gap to hit the $1.5M target?','Which Q3/Q4 deals are still unconfirmed?','Snowflake total across all events','How much revenue was lost and why?'];
+const QS=['Which month had the highest won revenue?','Top 5 sponsors by confirmed amount','Gap to hit the $1.2M target?','Which Q3/Q4 deals are still unconfirmed?','Snowflake total across all events','How much revenue was lost and why?'];
 document.getElementById('qr').innerHTML=QS.map(q=>`<button class="qb" onclick="askQ(this)">${q}</button>`).join('');
 
 function addMsg(cls,txt){
