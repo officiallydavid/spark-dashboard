@@ -5,14 +5,19 @@ exports.handler = async (event) => {
   }
 
   const SHEET_ID = '1ZxwJk-YIzkDcJyvhv3g2YL1czOZeEgsI';
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/A%3AH`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/A:H`;
 
   try {
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     if (res.status === 401) {
       return { statusCode: 401, headers: cors(), body: JSON.stringify({ error: 'Token expired — please sign in again' }) };
     }
-    if (!res.ok) throw new Error(`Sheets API returned ${res.status}`);
+    if (!res.ok) {
+      const errBody = await res.text();
+      let detail = errBody;
+      try { detail = JSON.parse(errBody)?.error?.message || errBody; } catch(_) {}
+      return { statusCode: 500, headers: cors(), body: JSON.stringify({ error: `Sheets API ${res.status}: ${detail}` }) };
+    }
 
     const json = await res.json();
     const rows = extractRows(json.values || []);
