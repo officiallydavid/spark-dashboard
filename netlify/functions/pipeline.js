@@ -54,11 +54,9 @@ function parseDate(str) {
 function extractRows(values) {
   const VALID = new Set(['P', 'V', 'F', 'Q', 'L']);
   const data = [];
-  let started = false;
 
-  for (const row of values) {
+  for (const row of values.slice(1)) {  // skip header row
     const col0 = (row[0] || '').trim();
-    if (!started) { if (col0 === 'Pipeline S/No') started = true; continue; }
     if (col0 === 'Pipeline Overview') break;
 
     const vendor = (row[3] || '').trim();
