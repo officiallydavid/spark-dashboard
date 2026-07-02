@@ -1,48 +1,33 @@
-exports.handler = async () => {
+exports.handler = async (event) => {
+  const token = ((event.headers || {}).authorization || '').replace(/^Bearer\s+/i, '').trim();
+  if (!token) {
+    return { statusCode: 401, headers: cors(), body: JSON.stringify({ error: 'Sign-in required' }) };
+  }
+
   const SHEET_ID = '1ZxwJk-YIzkDcJyvhv3g2YL1czOZeEgsI';
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/A%3AH`;
 
   try {
-    const res = await fetch(url, { redirect: 'follow' });
-    if (!res.ok) throw new Error(`Sheet returned ${res.status}`);
-    const csv = await res.text();
-    const rows = extractRows(csv);
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (res.status === 401) {
+      return { statusCode: 401, headers: cors(), body: JSON.stringify({ error: 'Token expired — please sign in again' }) };
+    }
+    if (!res.ok) throw new Error(`Sheets API returned ${res.status}`);
+
+    const json = await res.json();
+    const rows = extractRows(json.values || []);
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      headers: { ...cors(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ rows, fetchedAt: new Date().toISOString() })
     };
   } catch (e) {
-    return {
-      statusCode: 500,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-      body: JSON.stringify({ error: e.message })
-    };
+    return { statusCode: 500, headers: cors(), body: JSON.stringify({ error: e.message }) };
   }
 };
 
-function parseCSV(text) {
-  const result = [];
-  let row = [], field = '', inQuote = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (inQuote) {
-      if (c === '"') {
-        if (text[i + 1] === '"') { field += '"'; i++; }
-        else inQuote = false;
-      } else { field += c; }
-    } else {
-      if (c === '"') inQuote = true;
-      else if (c === ',') { row.push(field.trim()); field = ''; }
-      else if (c === '\n') {
-        row.push(field.trim());
-        if (row.some(f => f)) result.push(row);
-        row = []; field = '';
-      } else if (c !== '\r') field += c;
-    }
-  }
-  if (field || row.length) { row.push(field.trim()); if (row.some(f => f)) result.push(row); }
-  return result;
+function cors() {
+  return { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Authorization, Content-Type' };
 }
 
 function parseDate(str) {
@@ -60,18 +45,14 @@ function parseDate(str) {
   return String(mon).padStart(2, '0') + '/' + String(day).padStart(2, '0');
 }
 
-function extractRows(csv) {
+function extractRows(values) {
   const VALID = new Set(['P', 'V', 'F', 'Q', 'L']);
-  const allRows = parseCSV(csv);
   const data = [];
   let started = false;
 
-  for (const row of allRows) {
+  for (const row of values) {
     const col0 = (row[0] || '').trim();
-    if (!started) {
-      if (col0 === 'Pipeline S/No') started = true;
-      continue;
-    }
+    if (!started) { if (col0 === 'Pipeline S/No') started = true; continue; }
     if (col0 === 'Pipeline Overview') break;
 
     const vendor = (row[3] || '').trim();
@@ -82,10 +63,9 @@ function extractRows(csv) {
     if (!VALID.has(status)) continue;
 
     const amount = parseFloat((row[4] || '').replace(/[$,\s]/g, '')) || 0;
-    const dateStr = parseDate((row[1] || '').trim());
 
     data.push({
-      date: dateStr,
+      date: parseDate((row[1] || '').trim()),
       eventName,
       vendor,
       amount,

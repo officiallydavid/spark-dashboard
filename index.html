@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://accounts.google.com/gsi/client" async></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -252,9 +253,75 @@
       border-left: 2px solid #C8C2BB;
       white-space: pre-wrap;
     }
+    /* ── SIGN-IN SCREEN ── */
+    #signin-screen {
+      position: fixed; inset: 0; z-index: 1000;
+      background: #F8F6F1;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .si-card {
+      background: #FFFFFF;
+      border: 1px solid #C8C2BB;
+      border-radius: 4px;
+      padding: 48px 52px;
+      max-width: 420px; width: 90%;
+      text-align: center;
+    }
+    .si-eye {
+      font-family: 'DM Mono', monospace;
+      font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase;
+      color: #5C5854; margin-bottom: 16px;
+    }
+    .si-title {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 26px; font-weight: 400; letter-spacing: -.02em;
+      color: #1A1714; margin-bottom: 10px;
+    }
+    .si-sub {
+      font-size: 13px; color: #5C5854; margin-bottom: 36px; line-height: 1.6;
+    }
+    .si-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      background: #1A1714; color: #FFFFFF;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+      border: none; border-radius: 3px;
+      padding: 13px 24px; cursor: pointer; width: 100%;
+      transition: opacity .15s;
+    }
+    .si-btn:hover { opacity: .85; }
+    .si-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .si-err {
+      margin-top: 16px; font-size: 12px; color: #8B2020;
+      min-height: 18px; line-height: 1.5;
+    }
+    .so-btn {
+      font-family: 'DM Sans', sans-serif; font-size: 11px; color: #5C5854;
+      background: none; border: 1px solid #C8C2BB; border-radius: 3px;
+      padding: 4px 10px; cursor: pointer; margin-left: 8px;
+    }
+    .so-btn:hover { background: #F8F6F1; }
   </style>
 </head>
 <body>
+
+<!-- Sign-in overlay -->
+<div id="signin-screen">
+  <div class="si-card">
+    <div class="si-eye">SPARK · FY2026</div>
+    <div class="si-title">Revenue Dashboard</div>
+    <p class="si-sub">Sign in with your Google account<br>to access the pipeline data.</p>
+    <button class="si-btn" id="siBtn" onclick="startSignIn()" disabled>
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z" fill="#4285F4"/>
+        <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z" fill="#34A853"/>
+        <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332Z" fill="#FBBC05"/>
+        <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58Z" fill="#EA4335"/>
+      </svg>
+      Sign in with Google
+    </button>
+    <div class="si-err" id="siErr"></div>
+  </div>
+</div>
 
 <div class="hdr">
   <div>
@@ -266,10 +333,13 @@
       <div class="hdr-tgt">Annual Target · $1,500,000</div>
       <div class="hdr-date" id="hdrDate"></div>
     </div>
-    <button class="rfsh" id="rfshBtn" onclick="doRefresh()">
-      <span class="ri" id="ri">↻</span>
-      Refresh Data
-    </button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="rfsh" id="rfshBtn" onclick="doRefresh()">
+        <span class="ri" id="ri">↻</span>
+        Refresh Data
+      </button>
+      <button class="so-btn" onclick="signOut()" title="Sign out">Sign out</button>
+    </div>
     <div class="sync-ts" id="syncTs">Loading…</div>
   </div>
 </div>
@@ -661,28 +731,95 @@ function renderAll(){
   drawChart();
 }
 
-async function doRefresh(){
-  const btn=document.getElementById('rfshBtn');
-  const icon=btn.querySelector('.ri');
-  btn.disabled=true; icon.style.animation='spin .8s linear infinite';
-  try{
-    const res=await fetch('/.netlify/functions/pipeline');
-    const data=await res.json();
-    if(data.error) throw new Error(data.error);
-    const parsed=parseAPIRows(data.rows);
-    EV=parsed.EV; UNDATED=parsed.UNDATED;
-    renderAll();
-    const ts=new Date(data.fetchedAt);
-    document.getElementById('syncTs').textContent='Live data · updated '+ts.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  }catch(e){
-    document.getElementById('syncTs').textContent='Refresh failed: '+e.message;
-  }finally{
-    btn.disabled=false; icon.style.animation='';
+// ── GOOGLE AUTH ──
+let gToken = null;
+let tokenClient = null;
+
+async function initApp() {
+  try {
+    const res = await fetch('/.netlify/functions/config');
+    const cfg = await res.json();
+    if (!cfg.googleClientId) {
+      showSignInError('Setup error: GOOGLE_CLIENT_ID not configured in Netlify.');
+      return;
+    }
+    // Wait for Google Identity Services to load
+    await new Promise(resolve => {
+      if (window.google && window.google.accounts) { resolve(); return; }
+      const check = setInterval(() => {
+        if (window.google && window.google.accounts) { clearInterval(check); resolve(); }
+      }, 100);
+    });
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: cfg.googleClientId,
+      scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
+      callback: handleToken,
+    });
+    document.getElementById('siBtn').disabled = false;
+  } catch (e) {
+    showSignInError('Error loading sign-in: ' + e.message);
   }
 }
 
-// Auto-refresh on load to pull live sheet data
-window.addEventListener('load',()=>setTimeout(doRefresh,800));
+function handleToken(response) {
+  if (response.error) {
+    showSignInError('Sign-in failed: ' + response.error);
+    return;
+  }
+  gToken = response.access_token;
+  document.getElementById('signin-screen').style.display = 'none';
+  doRefresh();
+}
+
+function startSignIn() {
+  document.getElementById('siErr').textContent = '';
+  document.getElementById('siBtn').disabled = true;
+  tokenClient.requestAccessToken({ prompt: 'select_account' });
+  // Re-enable button after 3s in case user closes popup
+  setTimeout(() => { document.getElementById('siBtn').disabled = false; }, 3000);
+}
+
+function signOut() {
+  if (gToken) google.accounts.oauth2.revoke(gToken, () => {});
+  gToken = null;
+  document.getElementById('signin-screen').style.display = 'flex';
+  document.getElementById('syncTs').textContent = 'Loading…';
+}
+
+function showSignInError(msg) {
+  document.getElementById('siErr').textContent = msg;
+  document.getElementById('siBtn').disabled = false;
+}
+
+async function doRefresh() {
+  if (!gToken) return;
+  const btn = document.getElementById('rfshBtn');
+  const icon = btn.querySelector('.ri');
+  btn.disabled = true; icon.style.animation = 'spin .8s linear infinite';
+  try {
+    const res = await fetch('/.netlify/functions/pipeline', {
+      headers: { Authorization: `Bearer ${gToken}` }
+    });
+    const data = await res.json();
+    if (res.status === 401) {
+      // Token expired — prompt silent re-auth
+      tokenClient.requestAccessToken({ prompt: '' });
+      throw new Error('Session expired — signing in again…');
+    }
+    if (data.error) throw new Error(data.error);
+    const parsed = parseAPIRows(data.rows);
+    EV = parsed.EV; UNDATED = parsed.UNDATED;
+    renderAll();
+    const ts = new Date(data.fetchedAt);
+    document.getElementById('syncTs').textContent = 'Live data · updated ' + ts.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  } catch (e) {
+    document.getElementById('syncTs').textContent = 'Refresh failed: ' + e.message;
+  } finally {
+    btn.disabled = false; icon.style.animation = '';
+  }
+}
+
+window.addEventListener('load', initApp);
 </script>
 </body>
 </html>
