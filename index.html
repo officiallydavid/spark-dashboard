@@ -322,7 +322,7 @@
 <script>
 const AT = 1500000;
 
-const EV = [
+let EV = [
   {d:'01/14',m:'January 2026',e:'Tech Partners Networking',sp:[{v:'Apptio IBM',a:3000,s:'P',p:'Rueburn'}]},
   {d:'01/29',m:'January 2026',e:'IMDA Workshop #3/3 (2025 Contract)',sp:[{v:'IMDA',a:19200,s:'P',p:'Lucas'}]},
   {d:'02/03',m:'February 2026',e:'CNY — Lunch',sp:[{v:'Redis',a:3500,s:'P',p:'Maisie'},{v:'SUSE',a:4000,s:'P',p:'Denys'},{v:'Rubrik',a:3400,s:'P',p:'Claire'},{v:'Akamai',a:3000,s:'P',p:'Benson'}]},
@@ -376,7 +376,7 @@ const EV = [
   {d:'11/30',m:'November 2026',e:'SPARK Christmas Celebration',r:'Target $25,000',sp:[{v:'TBD',a:25000,s:'T'}]},
 ];
 
-const UNDATED = [
+let UNDATED = [
   {e:'Aerospike Executive Roundtable',sp:[{v:'Aerospike',a:20000,s:'V'}]},
   {e:'Crowdstrike Executive Roundtable',sp:[{v:'Crowdstrike',a:20000,s:'F'}]},
   {e:'Enable — Company TBC',sp:[{v:'Tanium',a:7500,s:'V'},{v:'Cloud Kinetics',a:16000,s:'L'}]},
@@ -397,18 +397,20 @@ function wonA(ev){return ev.sp.filter(s=>s.s==='P'||s.s==='V').reduce((t,s)=>t+(
 function fqA(ev){return ev.sp.filter(s=>s.s==='F'||s.s==='Q').reduce((t,s)=>t+(s.a||0),0);}
 function lostA(ev){return ev.sp.filter(s=>s.s==='L').reduce((t,s)=>t+(s.a||0),0);}
 
-const allEv = [...EV, ...UNDATED];
-let tW=0, tFQ=0, tL=0;
-allEv.forEach(e=>{tW+=wonA(e);tFQ+=fqA(e);tL+=lostA(e);});
-const tP = tW + tFQ;
-
-document.getElementById('krow').innerHTML = `
+function renderKPIs(){
+  const allEv=[...EV,...UNDATED];
+  let tW=0,tFQ=0,tL=0;
+  allEv.forEach(e=>{tW+=wonA(e);tFQ+=fqA(e);tL+=lostA(e);});
+  const tP=tW+tFQ;
+  document.getElementById('krow').innerHTML=`
 <div class="kc"><div class="kl">Won Revenue</div><div class="kv w">${fmt(tW)}</div><div class="ks">${((tW/AT)*100).toFixed(1)}% of target</div></div>
 <div class="kc"><div class="kl">Projected Total</div><div class="kv g">${fmt(tP)}</div><div class="ks">${((tP/AT)*100).toFixed(1)}% of target</div></div>
 <div class="kc"><div class="kl">Annual Target</div><div class="kv">${fmt(AT)}</div><div class="ks">Linear distribution</div></div>
 <div class="kc"><div class="kl">Pipeline F+Q</div><div class="kv a">${fmt(tFQ)}</div><div class="ks">Unconfirmed active</div></div>
 <div class="kc"><div class="kl">Lost Revenue</div><div class="kv r">${fmt(tL)}</div><div class="ks">Win rate ${((tW/(tW+tL))*100).toFixed(0)}%</div></div>
 <div class="kc"><div class="kl">Gap to Target</div><div class="kv ${(AT-tP)>0?'r':''}">${(AT-tP)>0?'-'+fmt(AT-tP):'On track'}</div><div class="ks">${(AT-tP)>0?'Pipeline needed':'Projected covers'}</div></div>`;
+}
+renderKPIs();
 
 function buildSp(sp){
   let show=sp.filter(s=>s.v);
@@ -488,14 +490,23 @@ function tab(id,btn){
 }
 
 // Chart
-const wonM=[22200,27900,120500,55500,185700,50000,21846,10000,4615,12000,0,0];
-const fqM=[0,0,0,0,0,0,69000,99000,156000,25000,20000,0];
-let cW=[], cP=[], rw=0, rp=0;
-for(let i=0;i<12;i++){rw+=wonM[i];rp+=wonM[i]+fqM[i];cW.push(rw);cP.push(rp);}
 const cT=Array.from({length:12},(_,i)=>AT*(i+1)/12);
 const MNS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const udWon=UNDATED.reduce((t,e)=>t+wonA(e),0);
-const udFQtotal=UNDATED.reduce((t,e)=>t+fqA(e),0);
+let cW=[], cP=[];
+
+function buildChartData(){
+  const wonM=new Array(12).fill(0), fqM=new Array(12).fill(0);
+  EV.forEach(e=>{
+    if(!e.d)return;
+    const mm=parseInt(e.d.split('/')[0])-1;
+    if(mm<0||mm>11)return;
+    wonM[mm]+=wonA(e); fqM[mm]+=fqA(e);
+  });
+  cW=[]; cP=[];
+  let rw=0,rp=0;
+  for(let i=0;i<12;i++){rw+=wonM[i];rp+=wonM[i]+fqM[i];cW.push(rw);cP.push(rp);}
+}
+buildChartData();
 
 function fmtL(v){
   if(v>=1000000) return '$'+(v/1000000).toFixed(1)+'M';
@@ -575,8 +586,10 @@ function drawChart(){
     }
   });
 
+  const udWon=UNDATED.reduce((t,e)=>t+wonA(e),0);
+  const udFQtotal=UNDATED.reduce((t,e)=>t+fqA(e),0);
   const note=document.getElementById('chartNote');
-  if(note) note.textContent=`Today = 30 Jun 2026 · $125,000/month linear target · Dark labels = Won (P+V), green labels = Projected (incl. F+Q) · Undated items ($${udWon.toLocaleString()} won, $${udFQtotal.toLocaleString()} F+Q) included in KPI strip only.`;
+  if(note) note.textContent=`$125,000/month linear target · Dark labels = Won (P+V), green = Projected (F+Q) · Undated items ($${udWon.toLocaleString()} won, $${udFQtotal.toLocaleString()} F+Q) in KPI strip only.`;
 }
 window.addEventListener('load',()=>setTimeout(drawChart,100));
 window.addEventListener('resize',drawChart);
@@ -621,16 +634,55 @@ function askQ(btn){
   sendChat();
 }
 
-function doRefresh(){
-  const btn=document.getElementById('rfshBtn');
-  btn.disabled=true;
-  btn.querySelector('.ri').style.animation='spin .8s linear infinite';
-  setTimeout(()=>{
-    btn.disabled=false;
-    btn.querySelector('.ri').style.animation='';
-    document.getElementById('syncTs').textContent='Data as of 30 Jun 2026 (update via Claude to refresh)';
-  },1500);
+function parseAPIRows(rows){
+  const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const evMap=new Map(), udMap=new Map();
+  for(const r of rows){
+    const isUndated=!r.date;
+    const key=r.eventName+'||'+(r.date||'');
+    const map=isUndated?udMap:evMap;
+    if(!map.has(key)){
+      let month='';
+      if(r.date){const mm=parseInt(r.date.split('/')[0])-1;if(mm>=0&&mm<12)month=MONTHS[mm]+' 2026';}
+      map.set(key,{d:r.date||'',m:month,e:r.eventName,sp:[],r:r.remarks||''});
+    }
+    const ev=map.get(key);
+    if(!ev.sp.some(s=>s.v===r.vendor))
+      ev.sp.push({v:r.vendor,a:r.amount,s:r.status,p:r.pic});
+  }
+  const newEV=[...evMap.values()].sort((a,b)=>(!a.d?1:!b.d?-1:a.d.localeCompare(b.d)));
+  return{EV:newEV,UNDATED:[...udMap.values()]};
 }
+
+function renderAll(){
+  renderKPIs();
+  buildActs();
+  buildChartData();
+  drawChart();
+}
+
+async function doRefresh(){
+  const btn=document.getElementById('rfshBtn');
+  const icon=btn.querySelector('.ri');
+  btn.disabled=true; icon.style.animation='spin .8s linear infinite';
+  try{
+    const res=await fetch('/.netlify/functions/pipeline');
+    const data=await res.json();
+    if(data.error) throw new Error(data.error);
+    const parsed=parseAPIRows(data.rows);
+    EV=parsed.EV; UNDATED=parsed.UNDATED;
+    renderAll();
+    const ts=new Date(data.fetchedAt);
+    document.getElementById('syncTs').textContent='Live data · updated '+ts.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  }catch(e){
+    document.getElementById('syncTs').textContent='Refresh failed: '+e.message;
+  }finally{
+    btn.disabled=false; icon.style.animation='';
+  }
+}
+
+// Auto-refresh on load to pull live sheet data
+window.addEventListener('load',()=>setTimeout(doRefresh,800));
 </script>
 </body>
 </html>
