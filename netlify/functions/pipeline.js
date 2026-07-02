@@ -20,11 +20,12 @@ exports.handler = async (event) => {
     }
 
     const json = await res.json();
-    const rows = extractRows(json.values || []);
+    const allValues = json.values || [];
+    const rows = extractRows(allValues);
     return {
       statusCode: 200,
       headers: { ...cors(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rows, fetchedAt: new Date().toISOString() })
+      body: JSON.stringify({ rows, fetchedAt: new Date().toISOString(), _debug: allValues.slice(0, 8) })
     };
   } catch (e) {
     return { statusCode: 500, headers: cors(), body: JSON.stringify({ error: e.message }) };
