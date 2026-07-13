@@ -4,7 +4,7 @@ exports.handler = async (event) => {
     return { statusCode: 401, headers: cors(), body: JSON.stringify({ error: 'Sign-in required' }) };
   }
 
-  const SHEET_ID = '1qlldotHuhW7e-2sohL1T7xr7RWjZe01CtMeAPWTFDWQ';
+  const SHEET_ID = '1UWuBt5afeHwBx-TpT2meGFAKSqARCWrhpo4gkbSLOsk';
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/A:H`;
 
   try {
