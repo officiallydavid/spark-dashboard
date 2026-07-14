@@ -4,7 +4,7 @@ exports.handler = async (event) => {
     return { statusCode: 401, headers: cors(), body: JSON.stringify({ error: 'Sign-in required' }) };
   }
 
-  const SHEET_ID = '1ShF1pZ2qYc0LJk8KPI-Xkb3iV7iqT-41pn_H278xE1Y';
+  const SHEET_ID = '13R1HBy47zIYLM7qEMTkw4rpqSU6DCMh0xpOgpBDRD8I';
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/A:H`;
 
   try {
@@ -25,7 +25,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers: { ...cors(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rows, fetchedAt: new Date().toISOString(), _debug: allValues.slice(0, 8) })
+      body: JSON.stringify({ rows, fetchedAt: new Date().toISOString() })
     };
   } catch (e) {
     return { statusCode: 500, headers: cors(), body: JSON.stringify({ error: e.message }) };
