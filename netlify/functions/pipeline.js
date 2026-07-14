@@ -37,18 +37,36 @@ function cors() {
 }
 
 function parseDate(str) {
-  if (!str || str.includes('1900')) return '';
+  if (!str) return '';
+  const s = String(str).trim();
+  if (s.includes('1900')) return '';
+
+  // MM/DD/YYYY or M/D/YYYY (from xlsx sync via Apps Script)
+  const slash = s.match(/^(\d{1,2})\/(\d{1,2})\/\d{4}$/);
+  if (slash) {
+    return String(parseInt(slash[1])).padStart(2, '0') + '/' + String(parseInt(slash[2])).padStart(2, '0');
+  }
+
+  // DD/MM/YYYY (alternate locale)
+  const slashDMY = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (slashDMY) {
+    return slashDMY[2].padStart(2, '0') + '/' + slashDMY[1].padStart(2, '0');
+  }
+
+  // DD-Mon (e.g. 14-Jan)
   const MONTHS = {
     jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12,
     january:1,february:2,march:3,april:4,june:6,july:7,august:8,
     september:9,october:10,november:11,december:12
   };
-  const m = str.match(/^(\d{1,2})-([A-Za-z]+)/);
-  if (!m) return '';
-  const day = parseInt(m[1]);
-  const mon = MONTHS[m[2].toLowerCase()];
-  if (!day || !mon) return '';
-  return String(mon).padStart(2, '0') + '/' + String(day).padStart(2, '0');
+  const m = s.match(/^(\d{1,2})-([A-Za-z]+)/);
+  if (m) {
+    const day = parseInt(m[1]);
+    const mon = MONTHS[m[2].toLowerCase()];
+    if (day && mon) return String(mon).padStart(2, '0') + '/' + String(day).padStart(2, '0');
+  }
+
+  return '';
 }
 
 function extractRows(values) {
