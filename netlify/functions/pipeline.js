@@ -70,7 +70,7 @@ function parseDate(str) {
 }
 
 function extractRows(values) {
-  const VALID = new Set(['P', 'V', 'F', 'Q', 'L']);
+  const VALID = new Set(['P', 'B', 'V', 'F', 'Q', 'L']);
   const data = [];
 
   for (const row of values.slice(1)) {  // skip header row

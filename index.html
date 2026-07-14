@@ -168,6 +168,7 @@
     .ea.w { color: #1B3558; }
     .ea.g { color: #1F5C38; }
     .ea.n { color: #5C5854; }
+    .ea.r { color: #7A2218; }
 
     /* ── SPONSOR TAGS ── */
     .sp {
@@ -176,10 +177,11 @@
       font-size: 10.5px; line-height: 1.6;
       border: 1px solid #C8C2BB; background: #FFFFFF; color: #1A1714;
     }
-    .sp.P { background: #E8EFF7; border-color: #9FBAD8; color: #0F2540; }
+    .sp.P { background: #D6EDDF; border-color: #5A9E78; color: #0F3D22; }
+    .sp.B { background: #D6EDDF; border-color: #5A9E78; color: #0F3D22; }
     .sp.V { background: #E8EFF7; border-color: #9FBAD8; color: #1B3A65; }
     .sp.F { background: #E8F2EC; border-color: #8FBF9F; color: #173D28; }
-    .sp.Q { background: #F0E9DC; border-color: #B8976A; color: #4A330F; }
+    .sp.Q { background: #D6EDDF; border-color: #5A9E78; color: #0F3D22; }
     .sp.T { background: #F0E9DC; border-color: #B8976A; color: #4A330F; }
     .sp.L {
       background: #F5ECEA; border-color: #C08888; color: #5C1710;
@@ -463,7 +465,7 @@ document.getElementById('syncTs').textContent = 'Data as of 30 Jun 2026';
 
 function fmt(a){if(!a)return'';if(a>=1e6)return'$'+(a/1e6).toFixed(2).replace(/\.?0+$/,'')+'M';if(a>=1000)return'$'+(a/1000).toFixed(0)+'k';return'$'+a.toLocaleString();}
 function fmtF(a){return'$'+a.toLocaleString();}
-function wonA(ev){return ev.sp.filter(s=>s.s==='P'||s.s==='V').reduce((t,s)=>t+(s.a||0),0);}
+function wonA(ev){return ev.sp.filter(s=>['P','B','V'].includes(s.s)).reduce((t,s)=>t+(s.a||0),0);}
 function fqA(ev){return ev.sp.filter(s=>s.s==='F'||s.s==='Q').reduce((t,s)=>t+(s.a||0),0);}
 function lostA(ev){return ev.sp.filter(s=>s.s==='L').reduce((t,s)=>t+(s.a||0),0);}
 
@@ -499,11 +501,24 @@ function buildSp(sp){
 }
 
 function evRow(e){
-  const ew=wonA(e), ef=fqA(e);
+  const TIERS=[
+    {keys:['P','B','Q'], cls:'g'},
+    {keys:['V'],         cls:'w'},
+    {keys:['F'],         cls:'n'},
+    {keys:['L'],         cls:'r'},
+  ];
+  let rows='';
+  TIERS.forEach(tier=>{
+    const vs=e.sp.filter(s=>tier.keys.includes(s.s));
+    if(!vs.length) return;
+    const sub=vs.reduce((t,s)=>t+(s.a||0),0);
+    rows+=`<div></div><div class="esp">${buildSp(vs)}</div><div class="ea ${tier.cls}">${sub>0?fmtF(sub):'—'}</div>`;
+  });
   return `<div class="ev">
 <div class="ed">${e.d||'—'}</div>
-<div><div class="en">${e.e}</div><div class="esp">${buildSp(e.sp)}</div>${e.r?`<div class="erk">${e.r}</div>`:''}</div>
-<div class="ea ${ew>0?'w':ef>0?'g':'n'}">${ew>0?fmtF(ew):ef>0?fmtF(ef):'—'}</div>
+<div class="en">${e.e}${e.r?`<div class="erk">${e.r}</div>`:''}</div>
+<div></div>
+${rows}
 </div>`;
 }
 
