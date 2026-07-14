@@ -456,7 +456,9 @@ let UNDATED = [
 ];
 
 const MO = ['January 2026','February 2026','March 2026','April 2026','May 2026','June 2026','July 2026','August 2026','September 2026','October 2026','November 2026','December 2026'];
-const PAST = new Set(['January 2026','February 2026','March 2026','April 2026','May 2026','June 2026']);
+const _MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const _CUR_MONTH=_MN[new Date().getMonth()]+' 2026';
+const PAST=new Set(MO.filter(m=>_MN.indexOf(m.split(' ')[0])<new Date().getMonth()));
 
 // Set header date
 const now = new Date();
@@ -531,17 +533,18 @@ function buildActs(){
     const mw=evs.reduce((t,e)=>t+wonA(e),0);
     const mfq=evs.reduce((t,e)=>t+fqA(e),0);
     const past=PAST.has(m);
+    const isCur=(m===_CUR_MONTH);
     h+=`<div class="msec">
 <div class="mh" onclick="togM(this)">
-  <span class="mn ${past?'cur':''}">${m}</span>
+  <span class="mn ${isCur?'cur':''}">${m}</span>
   <div class="mm">
     ${mw>0?`<span class="mw">${fmtF(mw)}</span>`:''}
     ${mfq>0?`<span class="mp">+${fmtF(mfq)}</span>`:''}
     ${mw===0&&mfq===0?`<span class="mn0">TBD</span>`:''}
-    <span class="mt ${past?'o':''}">▶</span>
+    <span class="mt ${isCur?'o':''}">▶</span>
   </div>
 </div>
-<div class="mb ${past?'o':''}">${evs.map(evRow).join('')}</div>
+<div class="mb ${isCur?'o':''}">${evs.map(evRow).join('')}</div>
 </div>`;
   });
   const udW=UNDATED.reduce((t,e)=>t+wonA(e),0);
